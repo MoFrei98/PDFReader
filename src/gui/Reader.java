@@ -47,7 +47,7 @@ public class Reader extends JFrame {
         tabbedPane = new JTabbedPane();
         tabbedPane.addChangeListener(e -> {
             if (tabbedPane.getSelectedIndex() == 1) { // Wenn der Tab "Extracted Text" ausgewählt wird
-               extractTextClick();
+                extractTextOfPdf();
             }
         });
 
@@ -92,7 +92,7 @@ public class Reader extends JFrame {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER)
-                    filterText();
+                    filterText(true);
             }
 
             @Override
@@ -102,13 +102,13 @@ public class Reader extends JFrame {
             @Override
             public void insertUpdate(DocumentEvent e) {
                 if (filterTextField.getText().length() >= 2)
-                    filterText();
+                    filterText(false);
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
                 if (!filterTextField.getText().isEmpty() && filterTextField.getText().length() >= 2)
-                    filterText();
+                    filterText(false);
                 else if (filterTextField.getText().isEmpty() && highlighter != null)
                     highlighter.removeAllHighlights();
             }
@@ -120,7 +120,7 @@ public class Reader extends JFrame {
         ignoreCaseCheckBox.setSelected(true);
         JButton filterButton = new JButton("Filter");
         filterButton.addActionListener(e -> {
-            filterText();
+            filterText(true);
         });
         filterPanel.add(filterLabel);
         filterPanel.add(filterTextField);
@@ -146,6 +146,7 @@ public class Reader extends JFrame {
         });
         bottomPanel.add(btnSelectPdf);
 
+        /*
         JButton btnExtractText = new JButton("Extract Text");
         btnExtractText.addActionListener(new ActionListener() {
             @Override
@@ -154,20 +155,21 @@ public class Reader extends JFrame {
             }
         });
         bottomPanel.add(btnExtractText);
+        */
     }
 
-    private void filterText() {
+    private void filterText(boolean manually) {
         final String filterText = (ignoreCaseCheckBox.isSelected() ? filterTextField.getText().toLowerCase() : filterTextField.getText());
         if (!filterText.isEmpty()) {
             highlighter = textArea.getHighlighter();
             highlighter.removeAllHighlights();
             DefaultHighlighter.DefaultHighlightPainter highlightPainter = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
 
-            String text = (ignoreCaseCheckBox.isSelected() ? textArea.getText().toLowerCase() : textArea.getText());
+            String pdfText = (ignoreCaseCheckBox.isSelected() ? textArea.getText().toLowerCase() : textArea.getText());
             int index = 0;
-            boolean found = false;
-            while ((index = text.indexOf(filterText, index)) != -1) {
-                found = true;
+            int found = 0;
+            while ((index = pdfText.indexOf(filterText, index)) != -1) {
+                found++;
                 int endIndex = index + filterText.length();
                 try {
                     highlighter.addHighlight(index, endIndex, highlightPainter);
@@ -176,8 +178,12 @@ public class Reader extends JFrame {
                 }
                 index = endIndex;
             }
-            if (!found)
+            if (found == 0 && manually)
                 JOptionPane.showMessageDialog(null, "String '" + filterTextField.getText() + "' not found");
+            else if (found > 0 && manually)
+                JOptionPane.showMessageDialog(null, "Found " + found + " occurrences of '" + filterTextField.getText() + "' in the PDFs text");
+
+            System.out.println("Found " + found + " occurrences of '" + filterTextField.getText() + "' in the PDFs text");
 
         } else
             JOptionPane.showMessageDialog(null, "Please enter a valid filter text");
@@ -224,7 +230,7 @@ public class Reader extends JFrame {
         }
     }
 
-    private void extractTextClick() {
+    private void extractTextOfPdf() {
         try {
             if (!isExtracted) {
                 extractedText = extractText();
@@ -248,12 +254,11 @@ public class Reader extends JFrame {
         PDDocument document = null;
         try {
             document = Loader.loadPDF(pdf);
-
             for (int i = 0; i < document.getNumberOfPages(); i++) {
                 extractedText.add(extractTextFromPage(document));
             }
 
-            System.out.println("Text aus PDF: ");
+            System.out.println("extracted the following text from PDF " + pdf.getAbsolutePath() + ": ");
             for (String line : extractedText)
                 System.out.println(line);
         } catch (IOException ex) {
