@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Reader extends JFrame {
 
@@ -30,6 +32,12 @@ public class Reader extends JFrame {
     private JPanel pdfPanel;
     private JPanel extractedTextPanel;
     private JTextArea textArea;
+    private static final int FILTER_INDEX_TEXT = 0;
+    private static final int FILTER_INDEX_DATE = 1;
+    private static final int FILTER_INDEX_TIME = 2;
+    private static final int FILTER_INDEX_PRICE = 3;
+    private static final String[] FILTER_OPTIONS = { "Text", "Datum", "Uhrzeit", "Preis" };
+    private JComboBox<String> filterDropdown;
     private JTextField filterTextField;
     private JCheckBox ignoreCaseCheckBox;
     private Highlighter highlighter = null;
@@ -84,6 +92,10 @@ public class Reader extends JFrame {
         });
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JLabel filterLabel = new JLabel("Filter:");
+        filterDropdown = new JComboBox<>(FILTER_OPTIONS);
+        filterDropdown.addActionListener(e -> {
+            onFilterChange();
+        });
         filterTextField = new JTextField(20);
         filterTextField.addKeyListener(new KeyListener() {
             @Override
@@ -92,7 +104,7 @@ public class Reader extends JFrame {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER)
-                    filterText(true);
+                    filter(true);
             }
 
             @Override
@@ -102,13 +114,13 @@ public class Reader extends JFrame {
             @Override
             public void insertUpdate(DocumentEvent e) {
                 if (filterTextField.getText().length() >= 2)
-                    filterText(false);
+                    filter(false);
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
                 if (!filterTextField.getText().isEmpty() && filterTextField.getText().length() >= 2)
-                    filterText(false);
+                    filter(false);
                 else if (filterTextField.getText().isEmpty() && highlighter != null)
                     highlighter.removeAllHighlights();
             }
@@ -120,9 +132,10 @@ public class Reader extends JFrame {
         ignoreCaseCheckBox.setSelected(true);
         JButton filterButton = new JButton("Filter");
         filterButton.addActionListener(e -> {
-            filterText(true);
+            filter(true);
         });
         filterPanel.add(filterLabel);
+        filterPanel.add(filterDropdown);
         filterPanel.add(filterTextField);
         filterPanel.add(ignoreCaseCheckBox);
         filterPanel.add(filterButton);
@@ -158,6 +171,42 @@ public class Reader extends JFrame {
         */
     }
 
+    private void onFilterChange() {
+        if (filterDropdown.getSelectedIndex() != FILTER_INDEX_TEXT) {
+            filterTextField.setText("");
+            filterTextField.setEnabled(false);
+            ignoreCaseCheckBox.setEnabled(false);
+        } else {
+            filterTextField.setEnabled(true);
+            ignoreCaseCheckBox.setEnabled(true);
+            filterTextField.requestFocusInWindow();
+        }
+
+        if (highlighter != null)
+            highlighter.removeAllHighlights();
+
+        filter(false);
+    }
+
+    private void filter(boolean manually) {
+        switch(filterDropdown.getSelectedIndex()) {
+            case FILTER_INDEX_TEXT:
+                filterText(manually);
+                break;
+            case FILTER_INDEX_DATE:
+                filterDate(manually);
+                break;
+            case FILTER_INDEX_TIME:
+                filterTime(manually);
+                break;
+            case FILTER_INDEX_PRICE:
+                filterPrice(manually);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid filter option selected");
+        }
+    }
+
     private void filterText(boolean manually) {
         final String filterText = (ignoreCaseCheckBox.isSelected() ? filterTextField.getText().toLowerCase() : filterTextField.getText());
         if (!filterText.isEmpty()) {
@@ -189,6 +238,59 @@ public class Reader extends JFrame {
             JOptionPane.showMessageDialog(null, "Please enter a valid filter text");
     }
 
+    private void filterDate(boolean manually) {
+        final String datePattern = "\\b\\d{1,2}[./-]\\d{1,2}[./-]\\d{4}\\b"; // Datumsmuster (z.B. 01/01/2022, 01.01.2022, 01-01-2022)
+        int found = filterWithPattern(datePattern);
+        if (found == 0 && manually)
+            JOptionPane.showMessageDialog(null, "No dates found in the PDFs text");
+        else if (found > 0 && manually)
+            JOptionPane.showMessageDialog(null, "Found " + found + " date occurrences in the PDFs text");
+    }
+
+    private void filterTime(boolean manually) {
+        final String timePattern = "\\b\\d{1,2}:\\d{2}\\b"; // Zeitmuster (z.B. 12:00)
+        int found = filterWithPattern(timePattern);
+        if (found == 0 && manually)
+            JOptionPane.showMessageDialog(null, "No times found in the PDFs text");
+        else if (found > 0 && manually)
+            JOptionPane.showMessageDialog(null, "Found " + found + " time occurrences in the PDFs text");
+    }
+
+    private void filterPrice(boolean manually) {
+        final String pricePattern = "\\b\\d+(\\.\\d{2})?\\s*[€$]\\b"; // Preis-Muster (z.B. 10.00 €, 10.00 $)
+        int found = filterWithPattern(pricePattern);
+        if (found == 0 && manually)
+            JOptionPane.showMessageDialog(null, "No prices found in the PDFs text");
+        else if (found > 0 && manually)
+            JOptionPane.showMessageDialog(null, "Found " + found + " price occurrences in the PDFs text");
+    }
+
+    private int filterWithPattern(String pattern) {
+        Pattern r = Pattern.compile(pattern);
+        Matcher m = r.matcher(textArea.getText());
+
+        highlighter = textArea.getHighlighter();
+        highlighter.removeAllHighlights();
+        DefaultHighlighter.DefaultHighlightPainter highlightPainter = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
+
+        int found = 0;
+        while (m.find()) {
+            found++;
+            try {
+                highlighter.addHighlight(m.start(), m.end(), highlightPainter);
+            } catch (BadLocationException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        System.out.println("Found " + found + " occurrences of pattern '" + pattern + "' in the PDFs text");
+
+        return found;
+    }
+
+    /**
+     * Select a PDF file from the file system to load it into the GUI.
+     */
     private void selectPdf() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -205,6 +307,7 @@ public class Reader extends JFrame {
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
+            tabbedPane.setSelectedIndex(0);
             pdfPanel.repaint();
         }
     }
@@ -238,6 +341,7 @@ public class Reader extends JFrame {
                 for (String line : extractedText)
                     textToShow.append(line).append("\n");
                 textArea.setText(textToShow.toString());
+                textArea.setCaretPosition(0);
             }
 
             tabbedPane.setSelectedIndex(1); // Wechseln zum Tab "Extracted Text"
