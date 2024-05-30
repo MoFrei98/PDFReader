@@ -36,7 +36,7 @@ public class Reader extends JFrame {
     private static final int FILTER_INDEX_DATE = 1;
     private static final int FILTER_INDEX_TIME = 2;
     private static final int FILTER_INDEX_PRICE = 3;
-    private static final String[] FILTER_OPTIONS = { "Text", "Datum", "Uhrzeit", "Preis" };
+    private static final String[] FILTER_OPTIONS = { "Text", "Date", "Time", "Price" };
     private JComboBox<String> filterDropdown;
     private JTextField filterTextField;
     private JCheckBox ignoreCaseCheckBox;
@@ -46,6 +46,9 @@ public class Reader extends JFrame {
 
     public Reader(File pdf) {
         this.pdf = pdf;
+
+        if (this.pdf != null)
+            System.out.println("Loading PDF: " + pdf.getAbsolutePath());
 
         setTitle("PDF Reader");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -65,7 +68,8 @@ public class Reader extends JFrame {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 try {
-                    displayPDF(g);
+                    if (pdf != null)
+                        displayPDF(g);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -128,7 +132,7 @@ public class Reader extends JFrame {
             @Override
             public void changedUpdate(DocumentEvent e) {}
         });
-        ignoreCaseCheckBox = new JCheckBox("IgnoreCase");
+        ignoreCaseCheckBox = new JCheckBox("Ignore Case");
         ignoreCaseCheckBox.setSelected(true);
         JButton filterButton = new JButton("Filter");
         filterButton.addActionListener(e -> {
@@ -158,17 +162,6 @@ public class Reader extends JFrame {
             selectPdf();
         });
         bottomPanel.add(btnSelectPdf);
-
-        /*
-        JButton btnExtractText = new JButton("Extract Text");
-        btnExtractText.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                extractTextClick();
-            }
-        });
-        bottomPanel.add(btnExtractText);
-        */
     }
 
     private void onFilterChange() {
@@ -234,7 +227,7 @@ public class Reader extends JFrame {
 
             System.out.println("Found " + found + " occurrences of '" + filterTextField.getText() + "' in the PDFs text");
 
-        } else
+        } else if (manually)
             JOptionPane.showMessageDialog(null, "Please enter a valid filter text");
     }
 
@@ -257,7 +250,7 @@ public class Reader extends JFrame {
     }
 
     private void filterPrice(boolean manually) {
-        final String pricePattern = "\\b\\d+(\\.\\d{2})?\\s*[€$]\\b"; // Preis-Muster (z.B. 10.00 €, 10.00 $)
+        final String pricePattern = "\\b\\d+([.,]\\d{2})?\\s*[€$]"; // Preis-Muster (z.B. 10.00 €, 10,00 €, 10.00$, 10 $)
         int found = filterWithPattern(pricePattern);
         if (found == 0 && manually)
             JOptionPane.showMessageDialog(null, "No prices found in the PDFs text");
@@ -299,14 +292,17 @@ public class Reader extends JFrame {
 
         int result = fileChooser.showOpenDialog(Reader.this);
         if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            this.pdf = selectedFile;
+            this.pdf = fileChooser.getSelectedFile();;
+            System.out.println("Loading PDF: " + pdf.getAbsolutePath());
+            /*
             try {
                 Loader.loadPDF(this.pdf);
                 this.isExtracted = false;
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
+            */
+            this.isExtracted = false;
             tabbedPane.setSelectedIndex(0);
             pdfPanel.repaint();
         }
@@ -315,11 +311,11 @@ public class Reader extends JFrame {
     private void displayPDF(Graphics g) throws IOException {
         PDDocument document = null;
         try {
-            document = Loader.loadPDF(pdf);
+            document = Loader.loadPDF(this.pdf);
             PDFRenderer renderer = new PDFRenderer(document);
 
             int numPages = document.getNumberOfPages();
-            int dpi = 100; // Dots per Inch. Je höher, desto besser die Qualität.
+            final int dpi = 100;
 
             for (int i = 0; i < numPages; i++) {
                 BufferedImage image = renderer.renderImageWithDPI(i, dpi);
@@ -354,13 +350,11 @@ public class Reader extends JFrame {
 
     private ArrayList<String> extractText() throws IOException {
         ArrayList<String> extractedText = new ArrayList<>();
-
         PDDocument document = null;
         try {
-            document = Loader.loadPDF(pdf);
-            for (int i = 0; i < document.getNumberOfPages(); i++) {
-                extractedText.add(extractTextFromPage(document));
-            }
+            document = Loader.loadPDF(this.pdf);
+            for (int i = 0; i < document.getNumberOfPages(); i++)
+                extractedText.add(new PDFTextStripper().getText(document));
 
             System.out.println("extracted the following text from PDF " + pdf.getAbsolutePath() + ": ");
             for (String line : extractedText)
@@ -372,9 +366,5 @@ public class Reader extends JFrame {
                 document.close();
         }
         return extractedText;
-    }
-
-    private String extractTextFromPage(PDDocument document) throws IOException {
-        return new PDFTextStripper().getText(document);
     }
 }

@@ -2,22 +2,23 @@ import gui.Reader;
 
 import javax.swing.*;
 import java.io.File;
+import java.util.Objects;
 
 public class Main {
     public static void main(String[] args) {
-        String filePath = getPDFFilePathFromArgs(args);
-        if (filePath == null)
-            filePath = findFirstPDFInTestFilesFolder();
+        File pdfFile = findFirstPDFInFilesFolder();
+        if (pdfFile == null)
+            System.out.println("No PDF found in files-to-read folder");
 
-        if (filePath == null) {
-            System.err.println("Keine PDF-Datei gefunden.");
-            System.exit(1); // Programm mit Fehlercode beenden
-        }
-
-        File pdfFile = new File(filePath);
         SwingUtilities.invokeLater(() -> {
-            Reader reader = new Reader(pdfFile);
-            reader.setVisible(true);
+            try {
+                Reader reader = new Reader(pdfFile);
+                reader.setEnabled(true);
+                reader.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.err.println("Error in PDF-Reader: " + e.getMessage());
+            }
         });
 
         /*
@@ -32,24 +33,15 @@ public class Main {
          */
     }
 
-    private static String getPDFFilePathFromArgs(String[] args) {
-        if (args.length > 0) {
-            String filePath = args[0];
-            File file = new File(filePath);
-            if (file.exists() && file.isFile() && filePath.toLowerCase().endsWith(".pdf")) {
-                return filePath;
-            }
-        }
-        return null;
-    }
+    private static File findFirstPDFInFilesFolder() {
+        File pdfFilesFolder = new File("files-to-read");
+        if (!pdfFilesFolder.exists())
+            pdfFilesFolder.mkdir();
 
-    private static String findFirstPDFInTestFilesFolder() {
-        File testFilesFolder = new File("files-to-read");
-        if (testFilesFolder.isDirectory()) {
-            File[] files = testFilesFolder.listFiles();
-            for (File file : files) {
+        if (pdfFilesFolder.isDirectory()) {
+            for (File file : Objects.requireNonNull(pdfFilesFolder.listFiles())) {
                 if (file.isFile() && file.getName().toLowerCase().endsWith(".pdf")) {
-                    return file.getAbsolutePath();
+                    return file;
                 }
             }
         }
