@@ -5,7 +5,7 @@
 Grafischer PDF Reader mit Filteroptionen. 
 Der Benutzer kann ein PDF Dokument auswählen, den Text des Dokuments extrahieren und diesen Filtern
 #### Filteroptionen:
-- Text (>= 2 Zeichen) + Case Sensitive (ja/Nein)
+- Text (>= 2 Zeichen) + Case Sensitive (ja/Nein) + Whole Word (ja/Nein)
 - Datum (Pattern: "\\b\\d{1,2}[./-]\\d{1,2}[./-]\\d{4}\\b")
 - Uhrzeit (Pattern: "\\b\\d{1,2}:\\d{2}\\b")
 - Preise (Pattern: "\\b\\d+([.,]\\d{2})?\\s*[€$]")
