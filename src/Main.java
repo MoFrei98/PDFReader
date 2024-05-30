@@ -1,15 +1,50 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import gui.Reader;
+
+import javax.swing.*;
+import java.io.File;
+import java.util.Objects;
+
 public class Main {
     public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+        File pdfFile = findFirstPDFInFilesFolder();
+        if (pdfFile == null)
+            System.out.println("No PDF found in files-to-read folder");
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
+        SwingUtilities.invokeLater(() -> {
+            try {
+                Reader reader = new Reader(pdfFile);
+                reader.setEnabled(true);
+                reader.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.err.println("Error in PDF-Reader: " + e.getMessage());
+            }
+        });
+
+        /*
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                File pdfFile = new File(filePath);
+                Reader reader = new Reader(pdfFile);
+                reader.setVisible(true);
+            }
+        });
+         */
+    }
+
+    private static File findFirstPDFInFilesFolder() {
+        File pdfFilesFolder = new File("files-to-read");
+        if (!pdfFilesFolder.exists())
+            pdfFilesFolder.mkdir();
+
+        if (pdfFilesFolder.isDirectory()) {
+            for (File file : Objects.requireNonNull(pdfFilesFolder.listFiles())) {
+                if (file.isFile() && file.getName().toLowerCase().endsWith(".pdf")) {
+                    return file;
+                }
+            }
         }
+        return null;
     }
 }
