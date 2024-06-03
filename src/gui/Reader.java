@@ -127,20 +127,24 @@ public class Reader extends JFrame {
             @Override
             public void changedUpdate(DocumentEvent e) {}
         });
+
         ignoreCaseCheckBox = new JCheckBox("Ignore Case");
         ignoreCaseCheckBox.addActionListener(e -> {
             filter(false);
         });
-        ignoreCaseCheckBox.setSelected(false);
+        ignoreCaseCheckBox.setSelected(true);
+
         wholeWordCheckBox = new JCheckBox("Whole Word");
         wholeWordCheckBox.addActionListener(e -> {
             filter(false);
         });
-        wholeWordCheckBox.setSelected(true);
+        wholeWordCheckBox.setSelected(false);
+
         JButton filterButton = new JButton("Filter");
         filterButton.addActionListener(e -> {
             filter(true);
         });
+
         filterPanel.add(filterLabel);
         filterPanel.add(filterDropdown);
         filterPanel.add(filterTextField);
@@ -151,6 +155,7 @@ public class Reader extends JFrame {
 
         textArea = new JTextArea();
         textArea.setEditable(false);
+
         JScrollPane scrollPane = new JScrollPane(textArea);
         extractedTextPanel.add(scrollPane, BorderLayout.CENTER);
         tabbedPane.addTab("Text", extractedTextPanel);
