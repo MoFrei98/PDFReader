@@ -25,8 +25,8 @@ public class Main {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                File pdfFile = new File(filePath);
                 Reader reader = new Reader(pdfFile);
+                reader.setEnabled(true);
                 reader.setVisible(true);
             }
         });

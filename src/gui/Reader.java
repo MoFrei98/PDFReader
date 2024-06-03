@@ -17,7 +17,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 public class Reader extends JFrame {
 
@@ -132,7 +131,7 @@ public class Reader extends JFrame {
         ignoreCaseCheckBox.addActionListener(e -> {
             filter(false);
         });
-        ignoreCaseCheckBox.setSelected(true);
+        ignoreCaseCheckBox.setSelected(false);
         wholeWordCheckBox = new JCheckBox("Whole Word");
         wholeWordCheckBox.addActionListener(e -> {
             filter(false);
