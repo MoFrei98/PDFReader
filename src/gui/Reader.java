@@ -223,7 +223,7 @@ public class Reader extends JFrame {
 
         int result = fileChooser.showOpenDialog(Reader.this);
         if (result == JFileChooser.APPROVE_OPTION) {
-            this.pdf = fileChooser.getSelectedFile();;
+            this.pdf = fileChooser.getSelectedFile();
             System.out.println("Loading PDF: " + pdf.getAbsolutePath());
 
             this.isExtracted = false;
