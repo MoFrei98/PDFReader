@@ -225,14 +225,7 @@ public class Reader extends JFrame {
         if (result == JFileChooser.APPROVE_OPTION) {
             this.pdf = fileChooser.getSelectedFile();;
             System.out.println("Loading PDF: " + pdf.getAbsolutePath());
-            /*
-            try {
-                Loader.loadPDF(this.pdf);
-                this.isExtracted = false;
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-            */
+
             this.isExtracted = false;
             tabbedPane.setSelectedIndex(0);
             pdfPanel.repaint();
@@ -242,12 +235,14 @@ public class Reader extends JFrame {
     private void displayPDF(Graphics g) throws IOException {
         PDDocument document = null;
         try {
+            // PDF laden und rendern
             document = Loader.loadPDF(this.pdf);
             PDFRenderer renderer = new PDFRenderer(document);
 
             int numPages = document.getNumberOfPages();
             final int dpi = 100;
 
+            // gerendertes pdf seite für seite als BufferedImage zeichen
             for (int i = 0; i < numPages; i++) {
                 BufferedImage image = renderer.renderImageWithDPI(i, dpi);
                 g.drawImage(image, 0, 0, image.getWidth(), image.getHeight(), null);
@@ -284,6 +279,7 @@ public class Reader extends JFrame {
         PDDocument document = null;
         try {
             document = Loader.loadPDF(this.pdf);
+            // Seite für seite des Dokuments mit PDFTextStripper().getText() extrahieren
             for (int i = 0; i < document.getNumberOfPages(); i++)
                 extractedText.add(new PDFTextStripper().getText(document));
 
