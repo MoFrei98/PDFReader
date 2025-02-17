@@ -36,6 +36,7 @@ public class Reader extends JFrame {
     private JTextField filterTextField;
     private JCheckBox ignoreCaseCheckBox;
     private JCheckBox wholeWordCheckBox;
+    private JButton filterButton;
 
     private boolean isExtracted = false;
 
@@ -140,7 +141,7 @@ public class Reader extends JFrame {
         });
         wholeWordCheckBox.setSelected(false);
 
-        JButton filterButton = new JButton("Filter");
+        filterButton = new JButton("Filter");
         filterButton.addActionListener(e -> {
             filter(true);
         });
@@ -178,9 +179,14 @@ public class Reader extends JFrame {
             filterTextField.setText("");
             filterTextField.setEnabled(false);
             ignoreCaseCheckBox.setEnabled(false);
+            wholeWordCheckBox.setEnabled(false);
+            filterButton.setEnabled(false);
+
         } else {
             filterTextField.setEnabled(true);
             ignoreCaseCheckBox.setEnabled(true);
+            wholeWordCheckBox.setEnabled(true);
+            filterButton.setEnabled(true);
             filterTextField.requestFocusInWindow();
         }
 
